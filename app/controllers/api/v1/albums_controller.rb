@@ -2,13 +2,21 @@ module Api
   module V1
     class AlbumsController < ApplicationController
       def index
-        render json: Album.get_albums(album_params)
+        render json: Album.get_albums(filter_params)
+      end
+
+      def update
+        Album.update_album(album_params)
       end
 
       private
 
-      def album_params
+      def filter_params
         params.permit(:limit, :offset)
+      end
+
+      def album_params
+        params.permit(:id, :album_title, :year, :condition, artist: {})
       end
     end
   end
