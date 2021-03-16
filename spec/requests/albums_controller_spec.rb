@@ -2,7 +2,8 @@ require 'rails_helper'
 
 RSpec.describe Api::V1::AlbumsController, type: :request do
   describe 'GET /index' do
-    let(:artist) { Artist.create }
+    let(:artist_name) { Faker::Name.first_name }
+    let(:artist) { Artist.create(name: artist_name) }
 
     let(:album_title1) { Faker::Name.first_name }
     let(:album_title2) { Faker::Name.first_name }
@@ -31,13 +32,21 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
       expect(response.status).to eq 200
     end
 
-    it 'returns all of the albums in the databse' do
+    it 'returns albums from the databse' do
       get '/api/v1/albums'
 
       parsed_response = JSON.parse(response.body)
 
       expect(parsed_response[0]['album_title']).to eq album_title1
       expect(parsed_response[1]['album_title']).to eq album_title2
+    end
+
+    it 'returns albums from the databse with the artist\'s name' do
+      get '/api/v1/albums'
+
+      parsed_response = JSON.parse(response.body)
+
+      expect(parsed_response[0]['artist']['name']).to eq artist_name
     end
 
     context 'when limit params are given' do

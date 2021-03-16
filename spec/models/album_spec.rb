@@ -16,7 +16,7 @@ RSpec.describe Album, type: :model do
   end
 
   describe 'get_albums' do
-    it 'calls order, limit and offset on the album and active record relation' do
+    it 'calls order, limit, offset, and includes on the album and active record relation' do
 
       expect(Album).to receive(:order)
         .with(:id)
@@ -25,9 +25,13 @@ RSpec.describe Album, type: :model do
       expect(Album).to receive(:limit)
         .with(5)
         .and_return(Album)
-        
+
       expect(Album).to receive(:offset)
         .with(3)
+        .and_return(Album)
+
+      expect(Album).to receive(:includes)
+        .with(:artist)
 
       Album.get_albums({ limit: 5, offset: 3 })
     end

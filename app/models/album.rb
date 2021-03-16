@@ -5,6 +5,6 @@ class Album < ApplicationRecord
     limit = params[:limit].present? ? params[:limit] : 10
     offset = params[:offset].present? ? params[:offset] : 0
 
-    Album.order(:id).limit(limit).offset(offset)
+    Album.order(:id).limit(limit).offset(offset).includes(:artist)
   end
 end
