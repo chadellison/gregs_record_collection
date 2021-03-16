@@ -9,6 +9,7 @@ gem 'puma', '~> 4.1'
 gem 'redis'
 gem 'bootsnap', '>= 1.4.2', require: false
 gem 'rack-cors'
+gem 'faker'
 
 group :development, :test do
   gem 'listen', '~> 3.2'
