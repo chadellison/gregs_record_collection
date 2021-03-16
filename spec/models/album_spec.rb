@@ -14,4 +14,22 @@ RSpec.describe Album, type: :model do
       expect(album.errors.messages).to eq expected_error
     end
   end
+
+  describe 'get_albums' do
+    it 'calls order, limit and offset on the album and active record relation' do
+
+      expect(Album).to receive(:order)
+        .with(:id)
+        .and_return(Album)
+
+      expect(Album).to receive(:limit)
+        .with(5)
+        .and_return(Album)
+        
+      expect(Album).to receive(:offset)
+        .with(3)
+
+      Album.get_albums({ limit: 5, offset: 3 })
+    end
+  end
 end
