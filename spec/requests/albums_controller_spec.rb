@@ -3,6 +3,8 @@ require 'rails_helper'
 RSpec.describe Api::V1::AlbumsController, type: :request do
   let(:artist_name) { Faker::Name.first_name }
   let(:artist) { Artist.create(name: artist_name) }
+  let!(:word) { Word.create(word: 'title', count: 1) }
+  let!(:old_word) { Word.create(word: 'old-title') }
 
   let(:album_title1) { Faker::Name.first_name }
   let(:album_title2) { Faker::Name.first_name }
@@ -186,6 +188,56 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
         actual = Album.find(album_to_update.id).album_title
 
         expect(actual).to eq expected
+      end
+
+      context 'when there are new words in the word title' do
+        it 'updates the word counts in the words' do
+          params = {
+            id: album_to_update.id,
+            album_title: 'much better name',
+            year: 2010,
+            condition: 'good',
+            artist: {
+              id: artist.id,
+              name: 'bob jones'
+            }
+          }
+
+          expect {
+            patch "/api/v1/albums/#{album_to_update.id}", params: params
+          }.to change { Word.count }.by(3)
+
+          word1 = Word.find_by(word: 'much')
+          word2 = Word.find_by(word: 'better')
+          word3 = Word.find_by(word: 'name')
+
+          expect(word1.count).to eq 1
+          expect(word2.count).to eq 1
+          expect(word3.count).to eq 1
+        end
+      end
+
+      context 'when there are not new words in the word title' do
+        it 'does not update the word count' do
+          params = {
+            id: album_to_update.id,
+            album_title: 'old-title',
+            year: 2010,
+            condition: 'good',
+            artist: {
+              id: artist.id,
+              name: 'bob jones'
+            }
+          }
+
+          expect {
+            patch "/api/v1/albums/#{album_to_update.id}", params: params
+          }.to change { Word.count }.by(0)
+
+          word = Word.find_by(word: 'old-title')
+
+          expect(word.count).to eq 1
+        end
       end
     end
 

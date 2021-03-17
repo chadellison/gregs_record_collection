@@ -112,7 +112,30 @@ RSpec.describe Album, type: :model do
           artist: { id: 3, name: artist_name }
         }
 
+        expect(Album).to receive(:handle_title)
+          .with('title', 'updated title')
+
         Album.update_album(params)
+      end
+    end
+  end
+
+  describe 'handle_title' do
+    it 'returns the new title' do
+      expect(Album.handle_title('title', 'title')).to eq 'title'
+    end
+
+    context 'when the album title is different from the given title' do
+      it 'calls update_word_counts with the correct arguments' do
+        expect(Word).to receive(:update_word_counts)
+          .with({old_title: 'old title', new_title: 'new title'})
+        Album.handle_title('old title', 'new title')
+      end
+    end
+
+    context 'when the album title is the same as the given title' do
+      it 'does not call perform_later' do
+
       end
     end
   end
