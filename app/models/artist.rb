@@ -15,4 +15,18 @@ class Artist < ApplicationRecord
       raise ActiveRecord::RecordInvalid
     end
   end
+
+  def albums_released_by_year
+    album_counts = {}
+    albums.each do |album|
+      year = album.year
+      if album_counts[year].present?
+        album_counts[year] += 1
+      else
+        album_counts[year] = 1
+      end
+    end
+
+    album_counts
+  end
 end

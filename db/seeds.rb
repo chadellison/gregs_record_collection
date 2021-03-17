@@ -35,7 +35,7 @@ def create_albums(artists, words)
     album = Album.new(
       album_title: title,
       artist: artist,
-      year: rand(1902..2021),
+      year: rand(1950..2021),
       condition: conditions.sample
     )
     albums << album

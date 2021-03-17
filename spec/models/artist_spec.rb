@@ -72,4 +72,19 @@ RSpec.describe Artist, type: :model do
       end
     end
   end
+
+  describe 'albums_released_by_year' do
+    it 'returns the number of records released for each year' do
+      artist = Artist.new(name: Faker::Name.first_name)
+
+      artist.albums.new(album_title: 'one', year: 1999)
+      artist.albums.new(album_title: 'one more', year: 1999)
+      artist.albums.new(album_title: 'one more time', year: 1999)
+      artist.albums.new(album_title: 'another time', year: 2000)
+
+      expected = { 1999 => 3, 2000 => 1 }
+
+      expect(artist.albums_released_by_year).to eq expected
+    end
+  end
 end
