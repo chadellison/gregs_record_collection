@@ -5,8 +5,12 @@ module Api
         render json: Album.get_albums(filter_params)
       end
 
+      def create
+        render json: Album.create_album(album_params), status: 201
+      end
+
       def update
-        Album.update_album(album_params)
+        render json: Album.update_album(album_params)
       end
 
       private

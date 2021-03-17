@@ -141,6 +141,29 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
         expect(actual_album_titles).to eq expected_titles
       end
     end
+
+    context 'when the params include a search parameter that is capitalized' do
+      it 'returns albums that include the search query in their titles regardless of case' do
+        titles = ['money', 'amon', 'bob', 'harmony', 'other', 'things', 'the monday blues']
+
+        titles.each do |title|
+          Album.create(album_title: title, artist: artist)
+        end
+
+        get '/api/v1/albums?limit=20&offset=0&search=MoN'
+
+        parsed_response = JSON.parse(response.body)
+
+        actual_album_titles = parsed_response.map do |album|
+          album['album_title']
+        end.sort
+
+        expected_titles = ['money', 'amon', 'harmony', 'the monday blues'].sort
+
+        expect(parsed_response.size).to eq 4
+        expect(actual_album_titles).to eq expected_titles
+      end
+    end
   end
 
   describe 'PATCH /update' do
@@ -153,7 +176,7 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
       )
     }
 
-    it 'returns a 204 status when the record is correclty updated' do
+    it 'returns a 200 status when the record is correclty updated' do
       params = {
         id: album_to_update.id,
         year: 2010,
@@ -166,7 +189,26 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
       }
       patch "/api/v1/albums/#{album_to_update.id}", params: params
 
-      expect(response.status).to eq 204
+      expect(response.status).to eq 200
+    end
+
+    it 'returns the updated resource' do
+      params = {
+        id: album_to_update.id,
+        year: 2010,
+        condition: 'good',
+        album_title: 'title',
+        artist: {
+          id: artist.id,
+          name: artist.name
+        }
+      }
+      patch "/api/v1/albums/#{album_to_update.id}", params: params
+
+      parsed_response = JSON.parse(response.body)
+
+      expect(parsed_response['album_title']).to eq 'title'
+      expect(parsed_response['artist']['name']).to eq artist_name
     end
 
     context 'when the album title is edited' do
@@ -313,6 +355,134 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
         expect{
           patch "/api/v1/albums/#{album_to_update.id}", params: params
         }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+    end
+  end
+
+  describe 'POST /create' do
+    it 'returns a 201 status' do
+      title = Faker::Name.first_name
+      params = { album_title: title, artist: { name: 'bob' } }
+
+      post '/api/v1/albums', params: params
+
+      expect(response.status).to eq 201
+    end
+
+    it 'creates an album' do
+      title = Faker::Name.first_name
+      params = { album_title: title, artist: { name: 'bob' } }
+
+      expect{
+        post '/api/v1/albums', params: params
+      }.to change { Album.count }.by(1)
+    end
+
+    it 'returns the created album' do
+      title = Faker::Name.first_name
+      params = { album_title: title, artist: { name: 'bob' } }
+
+      post '/api/v1/albums', params: params
+
+      parsed_response = JSON.parse(response.body)
+
+      expect(parsed_response['album_title']).to eq title.downcase
+      expect(parsed_response['artist']['name']).to eq 'bob'
+    end
+
+    context 'when the artist does not exist' do
+      it 'creates an artist' do
+        title = Faker::Name.first_name
+        params = { album_title: title, artist: { name: 'bob' } }
+
+        expect{
+          post '/api/v1/albums', params: params
+        }.to change { Artist.count }.by(1)
+        expect(Artist.find_by(name: 'bob')).to be_present
+      end
+    end
+
+    context 'when the artist already exists' do
+      it 'does not create an artist' do
+        title = Faker::Name.first_name
+        artist = Artist.create(name: 'bob')
+        params = { album_title: title, artist: { name: 'bob' } }
+
+        expect{
+          post '/api/v1/albums', params: params
+        }.not_to change { Artist.count }
+      end
+    end
+
+    context 'when the word does not exist' do
+      it 'creates a word with a count of one' do
+        title = Faker::Name.first_name
+        params = { album_title: title, artist: { name: 'bob' } }
+
+        expect{
+          post '/api/v1/albums', params: params
+        }.to change { Word.count }.by(1)
+      end
+    end
+
+    context 'when the word does exist' do
+      it 'increments it\'s count and does not add the word' do
+        word_name = Faker::Name.first_name.downcase
+
+        word = Word.create(word: word_name, count: 1)
+        params = { album_title: word_name, artist: { name: 'bob' } }
+
+        expect{
+          post '/api/v1/albums', params: params
+        }.not_to change { Word.count }
+
+        expect(Word.find_by(word: word_name).count).to eq 2
+      end
+    end
+
+    context 'when the album is invalid' do
+      context 'when the album title is empty' do
+        it 'raises a record invalid error' do
+          params = { album_title: '', artist: { name: 'bob' } }
+
+          expect{
+            post '/api/v1/albums', params: params
+          }.to raise_error(ActiveRecord::RecordInvalid)
+        end
+      end
+
+      context 'when the album title is nil' do
+        it 'raises a record invalid error' do
+          params = { album_title: nil, artist: { name: 'bob' } }
+
+          expect{
+            post '/api/v1/albums', params: params
+          }.to raise_error(ActiveRecord::RecordInvalid)
+        end
+      end
+
+      context 'when the artist name is empty' do
+        it 'raises a record invalid error' do
+          params = { album_title: 'this is the title', artist: { name: '' } }
+
+          expect{
+            post '/api/v1/albums', params: params
+          }.to raise_error(ActiveRecord::RecordInvalid)
+        end
+      end
+
+      context 'when the artist and album_title already exist' do
+        it 'raises a record invalid error' do
+          artist = Artist.create(name: 'bob')
+          artist.albums.create(album_title: 'duplicate')
+
+          params = { album_title: 'duplicate', artist: { name: 'bob' } }
+
+          expect{
+            post '/api/v1/albums', params: params
+            expect(repsonse.status).to eq 422
+          }.to raise_error(ActiveRecord::RecordInvalid)
+        end
       end
     end
   end

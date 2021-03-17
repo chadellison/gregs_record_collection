@@ -11,6 +11,7 @@ gem 'bootsnap', '>= 1.4.2', require: false
 gem 'rack-cors'
 gem 'faker'
 gem 'active_model_serializers'
+gem 'activerecord-import'
 
 group :development, :test do
   gem 'listen', '~> 3.2'

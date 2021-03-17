@@ -7,11 +7,34 @@ RSpec.describe Album, type: :model do
 
   context 'when no artist is present' do
     it 'is not valid' do
-      album = Album.new
+      album = Album.new(album_title: 'title')
       expect(album.valid?).to be false
 
       expected_error = { artist: ['must exist'] }
       expect(album.errors.messages).to eq expected_error
+    end
+  end
+
+  context 'when no album_title is present' do
+    it 'is not valid' do
+      artist = Artist.new
+      album = artist.albums.new
+      expect(album.valid?).to be false
+
+      expected_error = { album_title: ['can\'t be blank'] }
+      expect(album.errors.messages).to eq expected_error
+    end
+  end
+
+  context 'when an album_title and artist already exists' do
+    it 'is not valid' do
+      artist = Artist.create(name: 'bob')
+      album = artist.albums.create(album_title: 'abcs')
+      album_duplicate = artist.albums.new(album_title: 'abcs')
+      expect(album_duplicate.valid?).to be false
+
+      expected_error = {:album_title=>["has already been taken"]}
+      expect(album_duplicate.errors.messages).to eq expected_error
     end
   end
 
@@ -101,7 +124,7 @@ RSpec.describe Album, type: :model do
         expect(Album).to receive(:find).with(1).and_return(album)
         expect(Artist).to receive(:update_artist)
 
-        expect(album).to receive(:save)
+        expect(album).to receive(:save).and_return(true)
 
         artist_name = Faker::Name.first_name
         params = {
@@ -116,6 +139,31 @@ RSpec.describe Album, type: :model do
           .with('title', 'updated title')
 
         Album.update_album(params)
+      end
+    end
+
+    context 'when save returns false' do
+      it 'raises an invalid record error' do
+        album = Album.new
+        allow(Album).to receive(:find).with(1).and_return(album)
+        allow(Artist).to receive(:update_artist)
+
+        allow(album).to receive(:save).and_return(false)
+
+        artist_name = Faker::Name.first_name
+        params = {
+          id: 1,
+          album_title: 'updated title',
+          condition: 'updated condition',
+          year: 2222,
+          artist: { id: 3, name: artist_name }
+        }
+
+        allow(Album).to receive(:handle_title)
+
+        expect {
+          Album.update_album(params)
+        }.to raise_error(ActiveRecord::RecordInvalid)
       end
     end
   end
@@ -136,6 +184,112 @@ RSpec.describe Album, type: :model do
     context 'when the album title is the same as the given title' do
       it 'does not call perform_later' do
 
+      end
+    end
+  end
+
+  describe 'build_album' do
+    it 'calls find_or_create_by on Artist with the correct arguments' do
+      artist = Artist.new(name: 'bob')
+
+      expect(Artist).to receive(:find_or_create_by)
+        .with({ name: 'bob' })
+        .and_return(artist)
+
+      params = { artist: { name: 'bob' }, album_title: 'title' }
+
+      Album.build_album(params)
+    end
+
+    it 'returns an album with the associated artist' do
+      artist = Artist.create(name: 'bob')
+
+      allow(Artist).to receive(:find_or_create_by)
+        .with({ name: 'bob' })
+        .and_return(artist)
+
+      params = { artist: { name: 'bob' }, album_title: 'Title' }
+
+      actual = Album.build_album(params)
+
+      expect(actual.album_title).to eq 'title'
+      expect(actual.artist).to eq artist
+    end
+  end
+
+  describe 'create_album' do
+    it 'calls build_album' do
+      artist = Artist.new
+      album = artist.albums.new
+
+      params = { album_title: 'title' }
+
+      expect(Album).to receive(:build_album).with(params).and_return(album)
+
+      allow(album).to receive(:save).and_return(true)
+
+      Album.create_album(params)
+    end
+
+    it 'calls save on a given album' do
+      artist = Artist.new
+      album = artist.albums.new
+
+      params = { album_title: 'title' }
+
+      allow(Album).to receive(:build_album).with(params).and_return(album)
+
+      expect(album).to receive(:save).and_return(:true)
+
+      Album.create_album(params)
+    end
+
+    context 'when save returns false' do
+      it 'raises a bad request error' do
+        artist = Artist.new
+        album = artist.albums.new
+
+        params = { album_title: 'title' }
+
+        allow(Album).to receive(:build_album).with(params).and_return(album)
+
+        allow(album).to receive(:save).and_return(false)
+
+        expect{
+          Album.create_album(params)
+        }.to raise_error(ActiveRecord::RecordInvalid)
+      end
+    end
+
+    context 'when save returns true' do
+      it 'calls handle_title with the correct arguments' do
+        artist = Artist.new
+        album = artist.albums.new(album_title: 'title')
+
+        params = { album_title: 'title' }
+
+        allow(Album).to receive(:build_album).with(params).and_return(album)
+
+        allow_any_instance_of(Album).to receive(:save).and_return(:true)
+
+        expect(Album).to receive(:handle_title).with('', 'title')
+
+        Album.create_album(params)
+      end
+
+      it 'returns the saved album' do
+        artist = Artist.new
+        album = artist.albums.new(album_title: 'title')
+
+        params = { album_title: 'title' }
+
+        allow(Album).to receive(:build_album).with(params).and_return(album)
+
+        allow_any_instance_of(Album).to receive(:save).and_return(:true)
+
+        allow(Album).to receive(:handle_title).with('', 'title')
+
+        expect(Album.create_album(params)).to eq album
       end
     end
   end
