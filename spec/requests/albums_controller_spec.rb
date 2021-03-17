@@ -7,26 +7,7 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
   let(:album_title1) { Faker::Name.first_name }
   let(:album_title2) { Faker::Name.first_name }
 
-  let!(:album1) {
-    Album.create(
-      album_title: album_title1,
-      year: 1984,
-      condition: 'excellent',
-      artist: artist
-    )
-  }
-
-  let!(:album2) {
-    Album.create(
-      album_title: album_title2,
-      year: 1999,
-      condition: 'poor',
-      artist: artist
-    )
-  }
-
   describe 'GET /index' do
-
     it 'returns a 200 status on a successful call' do
       get '/api/v1/albums'
 
@@ -34,6 +15,20 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
     end
 
     it 'returns albums from the databse' do
+      Album.create(
+        album_title: album_title1,
+        year: 1984,
+        condition: 'excellent',
+        artist: artist
+      )
+
+      Album.create(
+        album_title: album_title2,
+        year: 1999,
+        condition: 'poor',
+        artist: artist
+      )
+
       get '/api/v1/albums'
 
       parsed_response = JSON.parse(response.body)
@@ -43,6 +38,13 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
     end
 
     it 'returns albums from the databse with the artist\'s name' do
+      Album.create(
+        album_title: album_title1,
+        year: 1984,
+        condition: 'excellent',
+        artist: artist
+      )
+
       get '/api/v1/albums'
 
       parsed_response = JSON.parse(response.body)
@@ -60,15 +62,15 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
 
         parsed_response = JSON.parse(response.body)
 
-        expect(parsed_response[0]['album_title']).to eq album_title1
-        expect(parsed_response[1]['album_title']).to eq album_title2
+        expect(parsed_response[0]['album_title']).to eq '0'
+        expect(parsed_response[1]['album_title']).to eq '1'
         expect(parsed_response.size).to eq 5
       end
     end
 
     context 'when limit and offset params are given' do
       it 'returns a paginated list of offset albums' do
-        10.times do |n|
+        12.times do |n|
           Album.create(album_title: n.to_s, artist: artist)
         end
 
@@ -76,16 +78,15 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
 
         parsed_response = JSON.parse(response.body)
 
-        expect(parsed_response[0]['album_title']).to eq '6'
-        expect(parsed_response.last['album_title']).to eq '9'
+        expect(parsed_response[0]['album_title']).to eq '8'
+        expect(parsed_response.last['album_title']).to eq '11'
         expect(parsed_response.size).to eq 4
       end
     end
 
     context 'when no limit and no offset params are given' do
       it 'returns the first 10 records by default' do
-
-        10.times do |n|
+        15.times do |n|
           Album.create(album_title: n.to_s, artist: artist)
         end
 
@@ -93,9 +94,49 @@ RSpec.describe Api::V1::AlbumsController, type: :request do
 
         parsed_response = JSON.parse(response.body)
 
-        expect(parsed_response[0]['album_title']).to eq album_title1
-        expect(parsed_response.last['album_title']).to eq '7'
+        expect(parsed_response[0]['album_title']).to eq '0'
+        expect(parsed_response.last['album_title']).to eq '9'
         expect(parsed_response.size).to eq 10
+      end
+    end
+
+    context 'when the limit and offset params are invalid' do
+      it 'disregards them' do
+        10.times do |n|
+          Album.create(album_title: n.to_s, artist: artist)
+        end
+
+        get '/api/v1/albums?limit=abc&offset=def'
+
+        parsed_response = JSON.parse(response.body)
+
+        expect(response.status).to eq 200
+        expect(parsed_response[0]['album_title']).to eq '0'
+        expect(parsed_response.last['album_title']).to eq '9'
+        expect(parsed_response.size).to eq 10
+      end
+    end
+
+    context 'when the params include a search parameter' do
+      it 'returns albums that include the search query in their titles' do
+        titles = ['money', 'amon', 'bob', 'harmony', 'other', 'things', 'the monday blues']
+
+        titles.each do |title|
+          Album.create(album_title: title, artist: artist)
+        end
+
+        get '/api/v1/albums?limit=20&offset=0&search=mon'
+
+        parsed_response = JSON.parse(response.body)
+
+        actual_album_titles = parsed_response.map do |album|
+          album['album_title']
+        end.sort
+
+        expected_titles = ['money', 'amon', 'harmony', 'the monday blues'].sort
+
+        expect(parsed_response.size).to eq 4
+        expect(actual_album_titles).to eq expected_titles
       end
     end
   end

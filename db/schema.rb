@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_03_16_013018) do
+ActiveRecord::Schema.define(version: 2021_03_16_235927) do
 
   # These are extensions that must be enabled in order to support this database
+  enable_extension "btree_gin"
   enable_extension "plpgsql"
 
   create_table "albums", force: :cascade do |t|
@@ -22,6 +23,7 @@ ActiveRecord::Schema.define(version: 2021_03_16_013018) do
     t.string "condition"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["album_title"], name: "index_albums_on_album_title", using: :gin
   end
 
   create_table "artists", force: :cascade do |t|

@@ -7,7 +7,7 @@ puts 'creating albums'
 
 30.times do |n|
   Album.create(
-    album_title: Faker::Name.first_name,
+    album_title: Faker::Name.first_name.downcase,
     artist: artist,
     year: rand(1902..2021),
     condition: conditions.sample

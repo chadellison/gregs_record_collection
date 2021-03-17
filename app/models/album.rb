@@ -2,10 +2,18 @@ class Album < ApplicationRecord
   belongs_to :artist
 
   def self.get_albums(params)
-    limit = params[:limit].present? ? params[:limit] : 10
-    offset = params[:offset].present? ? params[:offset] : 0
+    limit = params[:limit].to_i > 0 ? params[:limit].to_i : 10
 
-    Album.order(:id).limit(limit).offset(offset).includes(:artist)
+    query = Album.order(:id)
+      .limit(limit)
+      .offset(params[:offset].to_i)
+      .includes(:artist)
+
+    if params[:search].present?
+      query = query.where("album_title LIKE ?", "%#{params[:search]}%")
+    end
+
+    query
   end
 
   def self.update_album(params)

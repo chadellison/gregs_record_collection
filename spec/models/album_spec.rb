@@ -35,6 +35,57 @@ RSpec.describe Album, type: :model do
 
       Album.get_albums({ limit: 5, offset: 3 })
     end
+
+    context 'when the search parameter is present' do
+      it 'calls where with the correct arguments' do
+        allow(Album).to receive(:order)
+          .with(:id)
+          .and_return(Album)
+
+        allow(Album).to receive(:limit)
+          .with(10)
+          .and_return(Album)
+
+        allow(Album).to receive(:offset)
+          .with(0)
+          .and_return(Album)
+
+        allow(Album).to receive(:includes)
+          .with(:artist)
+          .and_return(Album)
+
+        expected1 = "album_title LIKE ?"
+        expected2 = "%abc%"
+
+        expect(Album).to receive(:where).with(expected1, expected2)
+
+        Album.get_albums({ search: 'abc' })
+      end
+    end
+
+    context 'when the search query is not present' do
+      it 'does not call where on the active record relation' do
+        allow(Album).to receive(:order)
+          .with(:id)
+          .and_return(Album)
+
+        allow(Album).to receive(:limit)
+          .with(10)
+          .and_return(Album)
+
+        allow(Album).to receive(:offset)
+          .with(0)
+          .and_return(Album)
+
+        allow(Album).to receive(:includes)
+          .with(:artist)
+          .and_return(Album)
+
+        expect(Album).not_to receive(:where)
+
+        Album.get_albums({})
+      end
+    end
   end
 
   describe 'update_album' do

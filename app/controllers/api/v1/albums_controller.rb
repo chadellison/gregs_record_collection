@@ -12,7 +12,7 @@ module Api
       private
 
       def filter_params
-        params.permit(:limit, :offset)
+        params.permit(:limit, :offset, :search)
       end
 
       def album_params
