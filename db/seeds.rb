@@ -24,14 +24,13 @@ def create_albums(artists, words)
   artist = artists.sample
 
   100_000.times do |n|
-
     artist = artists.sample if n % 10 == 0
     if n % 20_000 == 0
       Album.import albums
       albums = []
     end
 
-    title = Faker::Name.first_name.downcase[(rand(2))..(rand(20))]
+    title = Faker::Name.first_name.downcase[0..(rand(20))]
     album = Album.new(
       album_title: title,
       artist: artist,
