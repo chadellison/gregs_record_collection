@@ -66,7 +66,9 @@ POST localhost:3000/api/v1/albums
 ```
 ![ScreenShot](https://raw.github.com/chadellison/gregs_record_collection/master/public/create_album.png)
 
-additions must have a unique combination of album_title and artist name
+The album title and the name of the artist are required
+
+These requests must have a unique combination of album_title and artist name
 
 For example, if we try to create the same album twice we will get a 422 error:
 
@@ -77,7 +79,7 @@ GET localhost:3000/api/v1/words
 returns an array of the 10 most commonly used words and their respective counts
 ![ScreenShot](https://raw.github.com/chadellison/gregs_record_collection/master/public/words_request.png)
 
-We can also see the number of albums an artist released each each year with the following:
+We can also see the number of albums an artist released each year with the following:
 
 ```
 GET localhost:3000/api/v1/artists/807
@@ -110,6 +112,7 @@ run the seed file
 rake db:seed
 ```
 the seed file will load 1000 artists and 100_000 albums
+
 this should finish in less than a minute
 
 Since we know Greg will have 1 million albums any day now, we can update
