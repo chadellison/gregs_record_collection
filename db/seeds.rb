@@ -48,7 +48,7 @@ def create_albums(artists, words)
 
   Album.import albums
   end_time = Time.now
-  puts "created #{Album.count} artists in #{end_time - start} seconds"
+  puts "created #{Album.count} albums in #{end_time - start} seconds"
 end
 
 def create_words(words)
