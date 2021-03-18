@@ -84,7 +84,7 @@ GET localhost:3000/api/v1/artists/807
 ```
 ![ScreenShot](https://raw.github.com/chadellison/gregs_record_collection/master/public/artist_with_album_release_counts.png)
 
-###To run the application locally:
+### To run the application locally:
 run the following commands from the command line
 
 ```
