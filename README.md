@@ -114,7 +114,7 @@ this should finish in less than a minute
 
 Since we know Greg will have 1 million albums any day now, we can update
 the seed file to write 1 million albums to the database (this should take roughly 7 minutes)
-![ScreenShot](https://raw.github.com/chadellison/gregs_record_collection/master/public/artist_with_album_release_counts.png)
+![ScreenShot](https://raw.github.com/chadellison/gregs_record_collection/master/public/seed_output.png)
 
 key word searches across the entire album collection should still be sub 500 ms 👍
 
